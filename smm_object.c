@@ -1,74 +1,93 @@
 #include "smm_common.h"
 #include "smm_object.h"
 #include <string.h>
-
 #define MAX_NODETYPE    7
 #define MAX_GRADE       9
 #define MAX_NODE        100
-
-
-//Node type 정의 
-static char smmNodeName[MAX_TYPE_MAX][MAX_CHARNAME] = {
-	"강의",
-	"식당",
-	"실험실",
-	"집",
-	"실험실로 이동",
-	"음식찬스",
-	"축제기간"
+static char smmNodeName[SMMNODE_TYPE_MAX][MAX_CHARNAME] = {
+       "강의",
+       "식당",
+       "실험실",
+       "집",
+       "실험실로이동",
+       "음식찬스",
+       "축제시간"
 };
-
-//node type에 해당하는 이름 반환하는 함수 정의 
 char* smmObj_getTypeName(int type)
 {
-	return (char*)smmNodeName[type];
+      return (char*)smmNodeName[type];
 }
+//1. 구조체 형식 정의
+typedef struct smmObject {
+       char name[MAX_CHARNAME];
+       int type;
+       int credit;
+       int energy;
+} smmObject_t;
 
+//2. 구조체 배열 변수 정의 
+static smmObject_t smm_node[MAX_NODE];
 
-
-//object의 정보를 저장하는 변수 선언 
-static char smmObj_name[MAX_NODE][MAX_CHARNAME];
-static int smmObj_type[MAX_NODE];
-static int smmObj_credit[MAX_NODE];
-static int smmObj_energy[MAX_NODE];
 static int smmObj_noNode = 0;
 
-
-
+//3. 관련 함수 변경 
 //object generation
-void smmObj_genNode(char* name, int type, int credit, int energy) //노드 만드는 함수 
+void smmObj_genNode(char* name, int type, int credit, int energy)
+{    
+    strcpy(smm_node[smmObj_noNode].name, name);
+    smm_node[smmObj_noNode].type = type;
+    smm_node[smmObj_noNode].credit = credit;
+    smm_node[smmObj_noNode].energy = energy;
+    
+    smmObj_noNode++;
+}
+
+//3. 관련 함수 변경 
+char* smmObj_getNodeName(int node_nr)
 {
-	//object에 정보 저장 
-	strcpy(smmObj_name[smmObj__noNode],name); 
-	smmObj_type[smmObj_noNode] = type;
-	smmObj_credit[smmObj_noNode] = credit;
-	smmObj_energy[smmObj_noNode] = energy;
+    return smm_node[node_nr%16].name;
+}
+
+
+//3. 관련 함수 변경 
+int smmObj_getNodeType(int node_nr)
+{
+    return smm_node[node_nr%16].type;
+}
+int smmObj_getNodeCredit(int node_nr)
+{
+    return smm_node[node_nr%16].credit;
+}
+int smmObj_getNodeEnergy(int node_nr)
+{
+    return smm_node[node_nr%16].energy;
+}
+
+//음식 카드 
+typedef struct smmObject_food {
+	char name[MAX_CHARNAME];
+	int energy;
+} smmObject_food;
+
+static smmObject_food smm_food[MAX_NODE];
+
+static int smmObj_noFood = 0;
+
+void smmObj_genfood(char* name, int energy)
+{
+	strcpy(smm_food[smmObj_noFood].name, name);
+	smm_food[smmObj_noFood].energy = energy;
 	
-	smmObj_noNode++
+	smmObj_noFood++;
 }
 
-
-//object 번호에 해당하는 이름반환 
-char* smmObj_gotNodeName(int node_nr)
+char* smmObj_getFoodName(int food_nr)
 {
-	return smmObj_name[node_nr];
+	return smm_food[food_nr].name;
 }
 
-// object 번호에 해당하는 타입반환 
-int smmObj_gotNodeType(int node_nr)
+int smmObj_getFoodEnergy(int food_nr)
 {
-	return smmObj_type[node_nr];
- } 
-
-
-//element to string
-char* smmObj_getNodeName(int type)
-{
-    return smmNodeName[type];
-}
-
-char* smmObj_getGradeName(int grade)
-{
-    return smmGradeName[grade];
+	return smm_food[food_nr].energy;
 }
 

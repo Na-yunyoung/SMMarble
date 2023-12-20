@@ -4,7 +4,7 @@
 #define LISTNO_NODE             0
 #define LISTNO_FOODCARD         1
 #define LISTNO_FESTCARD         2
-#define LISTNO_OFFSET_GRADE     3
+#define LISTNO_OFFSET_GRADE     3  
 
 int smmdb_addTail(int list_nr, void* obj);          //add data to tail
 int smmdb_deleteData(int list_nr, int index);       //delete data
