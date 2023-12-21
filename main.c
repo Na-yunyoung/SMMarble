@@ -20,7 +20,7 @@ typedef struct player {
     int position;
     char name[MAX_CHARNAME];
     int accumCredit;
-    int* flag_graduate;
+    int flag_graduate[8];
 } player_t;
 
 
@@ -43,6 +43,20 @@ void* findGrade(int player, char* lectureName); //find the grade from the player
 void printGrades(int player); //print all the grade history of the player
 #endif
 
+void printGrades(int player) {
+    int i;
+
+    printf("수강한 과목들 출력\n");
+
+    for (i = 0; i < 8; i++) {
+        if (cur_player[player].flag_graduate[i] == 0)
+            break;
+        else {
+            printf("%s\n", smmObj_getNodeName(cur_player[player].flag_graduate[i]));
+        }
+    }
+}
+
 //player 상태 출력 함수 
 void printPlayerStatus(void)
 {
@@ -61,7 +75,7 @@ void printPlayerStatus(void)
 //초기값 설정 및 input player name 
 void generatePlayers(int n, int initEnergy) //generate a new player
 {
-    int i;
+    int i, j;
     //n time loop
     for (i = 0; i < n; i++)
     {
@@ -78,7 +92,9 @@ void generatePlayers(int n, int initEnergy) //generate a new player
         //player_energy[i] = initEnergy;
         cur_player[i].energy = initEnergy;
         cur_player[i].accumCredit = 0;
-        cur_player[i].flag_graduate = 0;
+
+        for (j = 0; j < 8; j++)
+            cur_player[i].flag_graduate[j] = 0;
     }
 }
 
@@ -90,10 +106,9 @@ int rolldie(int player)
     c = getchar();
     fflush(stdin);
 
-    /*
+
      if (c == 'g')
          printGrades(player);
-     */
 
     return (rand() % MAX_DIE + 1);
 }
@@ -109,6 +124,7 @@ void actionNode(int player, int die_result)
     int i;
     int lab_dice;
     int standard_lab;
+    int flag = 0;
 
     srand(time(NULL));
 
@@ -116,7 +132,17 @@ void actionNode(int player, int die_result)
     {
         //case lecture:
     case SMMNODE_TYPE_LECTURE:
-        if (cur_player[player].energy >= smmObj_getNodeCredit(cur_player[player].position))
+        for (i = 0; i < 8; i++) {
+            if (cur_player[player].flag_graduate[i] == cur_player[player].position % 16) {
+                flag = 1;
+                break;
+            }
+        }
+
+        if (flag == 1) {
+            printf("이미 수강한 과목입니다!\n");
+        }
+        else if (cur_player[player].energy >= smmObj_getNodeCredit(cur_player[player].position))
         {
             printf("수강하기-> y , 드랍하기-> n : ");
             scanf("%c", &choice_lecture);
@@ -127,6 +153,16 @@ void actionNode(int player, int die_result)
                 printf("수강합니다.\n");
                 cur_player[player].accumCredit += smmObj_getNodeCredit(cur_player[player].position);
                 cur_player[player].energy -= smmObj_getNodeEnergy(cur_player[player].position);
+
+                //수강 목록에 노드 번호를 이용해서 저장
+                for (i = 0; i < 8; i++) {
+                    if (cur_player[player].flag_graduate[i] == 0) {
+                        cur_player[player].flag_graduate[i] = cur_player[player].position % 16;
+                        break;
+                    }
+                    else
+                        continue;
+                }
             }
             else
                 printf("드랍합니다.\n");//choice_lecture : drop
@@ -171,6 +207,7 @@ void actionNode(int player, int die_result)
             }
             printf("실험 성공 기준값을 입력하시오 1-6까지 중 하나: ");
             scanf("%i", &standard_lab);
+            fflush(stdin);
             for (i = 0; i < MAX_NODE; i++)
             {
                 cur_player[player].energy -= smmObj_getNodeEnergy(cur_player[player].position);//실험하는 동안 에너지 소모 
@@ -208,13 +245,10 @@ void actionNode(int player, int die_result)
         }
         break;
 
-
-
-
     default:
         break;
     }
-	//집을 지나치면서 에너지를 얻는 경우 
+
     if (cur_player[player].position % 16 != 0 && cur_player[player].position % 16 - die_result < 0)
     {
         cur_player[player].energy += smmObj_getNodeEnergy(0);
@@ -258,7 +292,6 @@ int main(int argc, const char* argv[]) {
     if ((fp = fopen(BOARDFILEPATH, "r")) == NULL)
     {
         printf("[ERROR] failed to open %s. This file should be in the same directory of SMMarble.exe.\n", BOARDFILEPATH);
-        fflush(stdin);
         return -1;
     }
 
@@ -326,6 +359,7 @@ int main(int argc, const char* argv[]) {
         printf("%s\n", smmObj_getfestivalName(i));
     }
 
+    printf("\n\n");
 
     //2. Player configuration ---------------------------------------------------------------------------------
 
@@ -338,10 +372,6 @@ int main(int argc, const char* argv[]) {
     } while (player_nr < 0 || player_nr >  MAX_PLAYER);
 
     generatePlayers(player_nr, initEnergy);
-
-
-
-
 
     //3. SM Marble game starts ---------------------------------------------------------------------------------
     while (1) //is anybody graduated?
@@ -365,7 +395,7 @@ int main(int argc, const char* argv[]) {
         turn = (turn + 1) % player_nr;
 
         //게임 종료 조건
-        for (i = 0; i < MAX_PLAYER; i++) {
+        for (i = 0; i < player_nr; i++) {
             if (cur_player[i].position >= MAX_NODE)
                 flag = 1;
             else if (cur_player[i].accumCredit >= GRADUATE_CREDIT)
@@ -374,12 +404,21 @@ int main(int argc, const char* argv[]) {
 
         if (flag==1)
         {
-            printf("player가 node를 벗어났습니다. 게임종료\n");//node보다 player가 더 많이 간 경우 
+            printf("player가 node를 벗어났습니다. 게임종료\n");//node보다 player가 더 많이 간 경우
             break;
         }
-        else if (flag==2)
+        else if (flag == 2)
         {
             printf("졸업학점을 이수하였습니다. 게임종료 집으로 가시오\n");//졸업학점을 이수한 경우 
+            printf("%s이(가) 수강한 과목\n", cur_player[turn].name);
+            for (i = 0; i < 8; i++) {
+                if (cur_player[turn].flag_graduate[i] == 0)
+                    break;
+                else {
+                    printf("%s\n", smmObj_getNodeName(cur_player[turn].flag_graduate[i]));
+                    printf("total credit : %i\n",cur_player[turn].accumCredit);
+                }
+            }
             break;
         }
 
