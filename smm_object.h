@@ -17,6 +17,7 @@ typedef enum smmObjType {
     smmObjType_grade
 } smmObjType_e;
 
+//grade struct
 typedef enum smmObjGrade {
     smmObjGrade_Ap = 0,
     smmObjGrade_A0,
@@ -69,6 +70,9 @@ int smmObj_getNodeEnergy(int node_nr);
 //음식 카드 정보 
 char* smmObj_getFoodName(int food_nr);
 int smmObj_getFoodEnergy(int food_nr);
+
+//축제 카드 정보
+char* smmObj_getfestivalName(int festival_nr); 
 
 //element to string
 char* smmObj_getTypeName(int type);
